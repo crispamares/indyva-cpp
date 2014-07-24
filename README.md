@@ -2,10 +2,10 @@
 
 ## Installation
 
-You need `cmake` installed and zmq:
+You need `cmake` installed and `zmq`:
 
     sudo apt-get install cmake
-    sudo apt-get install libzmq-dev
+    sudo apt-get install libzmq3-dev
    
 In the root of this project 
 
