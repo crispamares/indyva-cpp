@@ -1,9 +1,9 @@
 /*************************************************************************
- * libjson-rpc-cpp
+ * indyva-cpp
  *************************************************************************
- * @file    helloworld.cpp
- * @date    08.03.2013
- * @author  Peter Spiess-Knafl <peter.knafl@gmail.com>
+ * @file    echo.cpp
+ * @date    31.07.2014
+ * @author  Juan Morales <juan.morales@upm.es>
  * @license See attached LICENSE.txt
  ************************************************************************/
 
@@ -11,15 +11,12 @@
 #include <string>
 #include <iostream>
 
-#include <jsonrpc/procedure.h>
-#include <jsonrpc/specificationwriter.h>
 #include <jsonrpc/client.h>
 #include <jsonrpc/connectors/zmqclient.h>
 #include <jsonrpc/connectors/zmq.hpp>
 
 using namespace jsonrpc;
 using namespace std;
-
 
 
 int main(int argc, char** argv)
@@ -41,7 +38,7 @@ int main(int argc, char** argv)
         Json::Value v;
         v.append("Paco");  // Using append
         Json::Value result = client->CallMethod("echo", v);
-
+	
         if(result.asString() != "Paco") {
             cerr << "Echo returned " << result.asString() << " but should be \"Paco\"" << endl;
 
@@ -75,13 +72,7 @@ int main(int argc, char** argv)
         cout << "OK named:\t Echo returned " << result.asString()  << endl;
 
         return 0;
-
-
-
 	
-
-
-
     } catch(jsonrpc::JsonRpcException e) {
 
         cerr << "Exception occured: " << e.what() << endl;
