@@ -1,3 +1,0 @@
-[submodule "vendor/libjson-rpc-cpp"]
-	path = vendor/libjson-rpc-cpp
-	url = https://github.com/crispamares/libjson-rpc-cpp.git

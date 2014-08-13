@@ -1,0 +1,7 @@
+set(INDYVA_PUBLIC_HEADERS
+  ${COMMON_INCLUDES}
+  hub.h)
+
+set(INDYVA_SOURCES
+  ${COMMON_SOURCES}
+  hub.cpp)

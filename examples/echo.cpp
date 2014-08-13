@@ -19,18 +19,18 @@ using namespace jsonrpc;
 using namespace std;
 
 
-int main(int argc, char** argv)
+int main()
 {
     zmq::context_t context(1);
-    
-    
+
+
     cout << "Conecting to tcp://localhost:18000" << endl;
-    
+
     ZmqClient *zmqClient = new ZmqClient("tcp://localhost:18000", context);
     Client* client = new Client(zmqClient);
-    
+
     try {
-	
+
 	/**
 	 * Call echo with position arguiments
 	 *
@@ -38,7 +38,7 @@ int main(int argc, char** argv)
         Json::Value v;
         v.append("Paco");  // Using append
         Json::Value result = client->CallMethod("echo", v);
-	
+
         if(result.asString() != "Paco") {
             cerr << "Echo returned " << result.asString() << " but should be \"Paco\"" << endl;
 
@@ -72,7 +72,7 @@ int main(int argc, char** argv)
         cout << "OK named:\t Echo returned " << result.asString()  << endl;
 
         return 0;
-	
+
     } catch(jsonrpc::JsonRpcException e) {
 
         cerr << "Exception occured: " << e.what() << endl;

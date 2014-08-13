@@ -1,0 +1,3 @@
+# -*- mode: cmake -*-
+# CMake/common https://github.com/Eyescale/CMake.git 716e4cf
+# vendor/libjson-rpc-cpp https://github.com/crispamares/libjson-rpc-cpp.git master
