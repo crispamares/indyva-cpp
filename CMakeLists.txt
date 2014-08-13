@@ -29,12 +29,12 @@ include(Common)
 include(FindPackages)
 
 link_directories(${CMAKE_BINARY_DIR}/install/lib)
-include_directories(${CMAKE_BINARY_DIR}/include/)
+include_directories(${CMAKE_BINARY_DIR}/include/ ${CMAKE_BINARY_DIR}/install/include/)
 
 add_subdirectory(indyva)
 add_subdirectory(examples)
 
-include(CPackConfig)
+#include(CPackConfig)
 include(PackageConfig)
 
 
