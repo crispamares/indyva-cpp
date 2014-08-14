@@ -11,11 +11,10 @@
 #include <string>
 #include <iostream>
 
-#include <jsonrpc/client.h>
-#include <jsonrpc/connectors/zmqclient.h>
 #include <jsonrpc/connectors/zmq.hpp>
 
 #include <indyva/hub.h>
+#include <indyva/rpc.h>
 
 
 void p (const std::string &topic, const Json::Value &msg) {
@@ -33,10 +32,9 @@ int main()
 
     std::cout << "Conecting to tcp://localhost:18000" << std::endl;
 
-    jsonrpc::ZmqClient zmqClient("tcp://localhost:18000", context);
-    jsonrpc::Client client(&zmqClient);
+    indyva::Rpc rpc(context, "tcp://localhost:18000");
 
-    indyva::Hub hub(client, context, "tcp://localhost:18001");
+    indyva::Hub hub(&rpc, context, "tcp://localhost:18001");
 
     std::string token_name_change = hub.subscribe("name:change", p);
     std::string token_r = hub.subscribe("r:", render);

@@ -14,8 +14,10 @@
 #include <map>
 #include <boost/function.hpp> 
 
-#include <jsonrpc/client.h>
 #include <jsonrpc/connectors/zmq.hpp>
+
+#include "rpc.h"
+
 
 namespace indyva {
 
@@ -24,7 +26,7 @@ namespace indyva {
     class Hub {
         public:
 
-	Hub(jsonrpc::Client& rpc_client, zmq::context_t& context, const std::string& pusub_url, const std::string& gateway_name = "gtzmq");
+	Hub(Rpc* rpc, zmq::context_t& context, const std::string& pusub_url, const std::string& gateway_name = "gtzmq");
 	
 	void publish(const std::string &topic, const Json::Value &msg) throw (jsonrpc::JsonRpcException);
 	std::string subscribe(const std::string &topic, callback_t callback) throw (jsonrpc::JsonRpcException);
@@ -53,7 +55,7 @@ namespace indyva {
         std::string subscribe(const std::string &topic, callback_t callback, bool only_once);
 	bool has_callback(const subscription_t & subscription, const callback_t & callback);
 
-        jsonrpc::Client& client;
+        Rpc * rpc;
 	std::string url;
 	zmq::socket_t socket;
         std::map<std::string, std::list<subscription_t>> subs_by_topic;

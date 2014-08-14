@@ -15,8 +15,6 @@
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 
-#include <jsonrpc/client.h>
-#include <jsonrpc/connectors/zmqclient.h>
 #include <jsonrpc/connectors/zmq.hpp>
 
 #include <iostream>
@@ -38,15 +36,15 @@ namespace indyva {
 	return port;
     }
 
-    Hub::Hub(jsonrpc::Client& c, zmq::context_t& context, const std::string& pubsub_url, const std::string& gateway_name)
-	: client(c), url(pubsub_url), socket(context, ZMQ_SUB), subs_by_topic(), subs_by_token(), gateway(gateway_name)
+    Hub::Hub(Rpc* r, zmq::context_t& context, const std::string& pubsub_url, const std::string& gateway_name)
+	: rpc(r), url(pubsub_url), socket(context, ZMQ_SUB), subs_by_topic(), subs_by_token(), gateway(gateway_name)
     {
 
 	Json::Value v;
 	v.append(this->gateway);
 	v.append("zmq");
 	v.append(extract_port(this->url));
-	this->client.CallMethod("HubSrv.new_gateway", v);
+	this->rpc->call("HubSrv.new_gateway", v);
 
 	// Connect to the PUB socket and subscribe to everything
 	this->socket.connect(this->url.c_str());
@@ -59,7 +57,7 @@ namespace indyva {
         v["topic"] = topic;
         v["msg"] = msg;
 
-        this->client.CallMethod("HubSrv.publish", v);
+        this->rpc->call("HubSrv.publish", v);
     }
 
     std::string Hub::subscribe(const std::string &topic, callback_t callback, bool only_once)
@@ -85,9 +83,9 @@ namespace indyva {
 	v.append(topic);
 
 	if (new_topic && only_once)
-	    this->client.CallMethod("HubSrv.subscribe_once", v);
+	    this->rpc->call("HubSrv.subscribe_once", v);
 	else if (new_topic && !only_once)
-	    this->client.CallMethod("HubSrv.subscribe", v);
+	    this->rpc->call("HubSrv.subscribe", v);
 	
 	return token;
     }
@@ -120,7 +118,7 @@ namespace indyva {
 	    Json::Value v;
 	    v.append(this->gateway);
 	    v.append(subscription.topic);
-	    this->client.CallMethod("HubSrv.unsubscribe", v);
+	    this->rpc->call("HubSrv.unsubscribe", v);
 
 	    this->subs_by_topic.erase(subscription.topic);
 	}
@@ -152,7 +150,7 @@ namespace indyva {
 
 	Json::Value v;
 	v.append(this->gateway);
-	this->client.CallMethod("HubSrv.clear", v);
+	this->rpc->call("HubSrv.clear", v);
     }
 
     void Hub::receive() {

@@ -11,23 +11,17 @@
 #include <string>
 #include <iostream>
 
-#include <jsonrpc/client.h>
-#include <jsonrpc/connectors/zmqclient.h>
-#include <jsonrpc/connectors/zmq.hpp>
+#include <indyva/rpc.h>
 
-using namespace jsonrpc;
 using namespace std;
-
 
 int main()
 {
     zmq::context_t context(1);
 
-
     cout << "Conecting to tcp://localhost:18000" << endl;
 
-    ZmqClient *zmqClient = new ZmqClient("tcp://localhost:18000", context);
-    Client* client = new Client(zmqClient);
+    indyva::Rpc rpc = indyva::Rpc(context, "tcp://localhost:18000");
 
     try {
 
@@ -37,13 +31,10 @@ int main()
 	 */
         Json::Value v;
         v.append("Paco");  // Using append
-        Json::Value result = client->CallMethod("echo", v);
+        Json::Value result = rpc.call("echo", v);
 
         if(result.asString() != "Paco") {
             cerr << "Echo returned " << result.asString() << " but should be \"Paco\"" << endl;
-
-            delete client;
-            delete zmqClient;
 
             return -1;
         }
@@ -56,19 +47,14 @@ int main()
 	 */
         Json::Value v2;
         v2["a"] = "Paco Pepe";  // like this
-        result = client->CallMethod("echo", v2);
+        result = rpc.call("echo", v2);
 
         if(result.asString() != "Paco Pepe") {
             cerr << "Echo returned " << result.asString() << " but should be \"Paco Pepe\"" << endl;
 
-            delete client;
-            delete zmqClient;
-
             return -1;
         }
 
-        delete client;
-        delete zmqClient;
         cout << "OK named:\t Echo returned " << result.asString()  << endl;
 
         return 0;
@@ -76,8 +62,6 @@ int main()
     } catch(jsonrpc::JsonRpcException e) {
 
         cerr << "Exception occured: " << e.what() << endl;
-        delete client;
-        delete zmqClient;
         return -999;
     }
 }
