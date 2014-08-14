@@ -10,7 +10,7 @@
 #ifndef HUB_H_
 #define HUB_H_
 
-#include <vector>
+#include <list>
 #include <map>
 #include <boost/function.hpp> 
 
@@ -29,26 +29,37 @@ namespace indyva {
 	Hub(jsonrpc::Client& rpc_client, zmq::context_t& context, const std::string& pusub_url);
 	
 	void publish(const std::string &topic, const Json::Value &msg) throw (jsonrpc::JsonRpcException);
-	void subscribe(const std::string &topic, callback_t callback) throw (jsonrpc::JsonRpcException);
-	void subscribe_once(const std::string &topic, callback_t callback) throw (jsonrpc::JsonRpcException);
-	void unsubscribe(const std::string &topic, callback_t callback) throw (jsonrpc::JsonRpcException);	
+	std::string subscribe(const std::string &topic, callback_t callback) throw (jsonrpc::JsonRpcException);
+	std::string subscribe_once(const std::string &topic, callback_t callback) throw (jsonrpc::JsonRpcException);
+	void unsubscribe(const std::string &token);
+	void close(const std::string &topic);
+	void clear();
 	
         void receive();
         void receive_forever();
 
         private:
 
-        void subscribe(const std::string &topic, callback_t callback, bool only_once) throw (jsonrpc::JsonRpcException);
-
         struct subscription_t {
             bool only_once;
             callback_t callback;
+	    std::string token;
+	    std::string topic;
+
+	    bool operator==(const subscription_t& other) const
+	    {
+		return token == other.token;
+	    }
         };
+
+        std::string subscribe(const std::string &topic, callback_t callback, bool only_once);
+	bool has_callback(const subscription_t & subscription, const callback_t & callback);
 
         jsonrpc::Client& client;
 	std::string url;
 	zmq::socket_t socket;
-        std::map<std::string, std::vector<subscription_t>> subscriptions;
+        std::map<std::string, std::list<subscription_t>> subs_by_topic;
+        std::map<std::string, subscription_t> subs_by_token;
 	
     };
     

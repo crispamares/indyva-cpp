@@ -38,28 +38,36 @@ int main()
 
     indyva::Hub hub(client, context, "tcp://localhost:18001");
 
-    hub.subscribe("r:", render);
-    hub.subscribe("name:change", p);
+    std::string token_name_change = hub.subscribe("name:change", p);
+    std::string token_r = hub.subscribe("r:", render);
 
-    try {
+    /**
+     * Construction of a message
+     */
+    Json::Value msg("Paco");
+    std::string topic("name:change");
 
-	/**
-	 * Publish an event
-	 *
-	 */
-        Json::Value msg("Paco");
-	std::string topic("name:change");
+    std::cout << "Pubishing-->\t  topic: " << topic << "\t msg: " << msg.asString()  << std::endl;
+    hub.publish(topic, msg);
+    hub.receive();
 
-        std::cout << "Pubishing-->\t  topic: " << topic << "\t msg: " << msg.asString()  << std::endl;
-	hub.publish(topic, msg);
+    std::cout << "Pubishing-->\t  topic: " << topic << "\t msg: " << msg.asString()  << std::endl;
+    std::cout << "Unsubscribe-->\t  topic: " << topic << std::endl;
+    hub.unsubscribe(token_name_change);
+    hub.publish(topic, msg);
+    hub.receive();
+    hub.receive();
+    hub.receive();
+    
+    std::cout << std::endl << "* Note that the publised message has not been received" << std::endl;
 
-	hub.receive_forever();
+    // TIP: hub.received_forever should be more convenient in your use case
+    for (int i=0; i<100; ++i)
+	hub.receive();
 
-        return 0;
+    hub.clear();
 
-    } catch(jsonrpc::JsonRpcException e) {
+    hub.receive(); // This must be blocking. There are no subscriptions at this point. 
+    return 0;
 
-        std::cerr << "Exception occured: " << e.what() << std::endl;
-        return -999;
-    }
 }

@@ -11,6 +11,10 @@
 #include <vector>
 #include <map>
 
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
+
 #include <jsonrpc/client.h>
 #include <jsonrpc/connectors/zmqclient.h>
 #include <jsonrpc/connectors/zmq.hpp>
@@ -35,7 +39,7 @@ namespace indyva {
     }
 
     Hub::Hub(jsonrpc::Client& c, zmq::context_t& context, const std::string& pubsub_url)
-	: client(c), url(pubsub_url), socket(context, ZMQ_SUB), subscriptions()
+	: client(c), url(pubsub_url), socket(context, ZMQ_SUB), subs_by_topic(), subs_by_token()
     {
 
 	Json::Value v;
@@ -58,16 +62,23 @@ namespace indyva {
         this->client.CallMethod("HubSrv.publish", v);
     }
 
-    void Hub::subscribe(const std::string &topic, callback_t callback, bool only_once) throw (jsonrpc::JsonRpcException) 
+    std::string Hub::subscribe(const std::string &topic, callback_t callback, bool only_once)
     {
 	
-	bool new_topic = (this->subscriptions.count(topic) == 0);
+	bool new_topic = (this->subs_by_topic.count(topic) == 0);
+
+	boost::uuids::random_generator gen;
+	boost::uuids::uuid u = gen();
+	std::string token = boost::uuids::to_string(u);
 	
 	subscription_t subscription;
 	subscription.only_once = only_once;
 	subscription.callback = callback;
-	
-	this->subscriptions[topic].push_back(subscription);
+	subscription.token = token;
+	subscription.topic = topic;
+
+	this->subs_by_topic[topic].push_back(subscription);
+	this->subs_by_token[token] = subscription;
 
 	Json::Value v;
 	v.append(GATEWAY);
@@ -77,19 +88,72 @@ namespace indyva {
 	    this->client.CallMethod("HubSrv.subscribe_once", v);
 	else if (new_topic && !only_once)
 	    this->client.CallMethod("HubSrv.subscribe", v);
+	
+	return token;
     }
 
-    void Hub::subscribe(const std::string &topic, callback_t callback) throw (jsonrpc::JsonRpcException)
+    std::string Hub::subscribe(const std::string &topic, callback_t callback) throw (jsonrpc::JsonRpcException)
     {
-	subscribe(topic, callback, false);
+	return subscribe(topic, callback, false);
     }
 
-    void Hub::subscribe_once(const std::string &topic, callback_t callback) throw (jsonrpc::JsonRpcException)
+    std::string Hub::subscribe_once(const std::string &topic, callback_t callback) throw (jsonrpc::JsonRpcException)
     {
-	subscribe(topic, callback, true);
+	return subscribe(topic, callback, true);
     }
-//    void Hub::unsubscribe(const std::string &topic, callback_t callback) throw (jsonrpc::JsonRpcException){}
 
+    void Hub::unsubscribe(const std::string &token)
+    {
+	if (this->subs_by_token.count(token) == 0) {
+	    std::stringstream msg;
+	    msg << "There is no subscription with token: '" << token << "' to unsubscribe";
+	    throw msg.str();
+	}
+
+        subscription_t subscription = this->subs_by_token.at(token);
+	std::list<subscription_t> subscriptions = this->subs_by_topic.at(subscription.topic);
+	
+        subscriptions.remove(subscription);
+	this->subs_by_token.erase(token);
+
+	if (subscriptions.empty()) {
+	    Json::Value v;
+	    v.append(GATEWAY);
+	    v.append(subscription.topic);
+	    this->client.CallMethod("HubSrv.unsubscribe", v);
+
+	    this->subs_by_topic.erase(subscription.topic);
+	}
+    }
+
+    void Hub::close(const std::string &topic) 
+    {
+	if (this->subs_by_topic.count(topic) == 0) {
+	    std::stringstream msg;
+	    msg << "There is no subscription with topic: '" << topic << "' to unsubscribe";
+	    throw msg.str();
+	}
+
+	std::list<subscription_t> subscriptions = this->subs_by_topic.at(topic);    
+	std::list<std::string> tokens;
+
+	for (auto it = subscriptions.begin() ; it != subscriptions.end(); ++it) {
+	    tokens.push_back(it->token);
+	}
+	for (auto it = tokens.begin() ; it != tokens.end(); ++it) {
+	    unsubscribe(*it);
+	}
+    }
+
+    void Hub::clear()
+    {
+	this->subs_by_topic.clear();
+	this->subs_by_token.clear();
+
+	Json::Value v;
+	v.append(GATEWAY);
+	this->client.CallMethod("HubSrv.clear", v);
+    }
 
     void Hub::receive() {
 	zmq::message_t event;
@@ -104,10 +168,10 @@ namespace indyva {
         Json::Value value;
         reader.parse(msg_json, value); // @TODO: control errors
 
-	if (this->subscriptions.count(topic)) {
-	    std::vector<subscription_t> matching_subscriptions = this->subscriptions.at(topic);
+	if (this->subs_by_topic.count(topic)) {
+	    std::list<subscription_t> subscriptions = this->subs_by_topic.at(topic);
 
-	    for (auto it = matching_subscriptions.begin() ; it != matching_subscriptions.end(); ++it) {
+	    for (auto it = subscriptions.begin() ; it != subscriptions.end(); ++it) {
 		it->callback(topic, value);
 	    }
 	}
