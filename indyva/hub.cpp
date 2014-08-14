@@ -24,7 +24,7 @@
 
 namespace indyva {
 
-    const std::string GATEWAY("gtzmq");
+
 
     unsigned int extract_port(const std::string& url)
     {
@@ -38,12 +38,12 @@ namespace indyva {
 	return port;
     }
 
-    Hub::Hub(jsonrpc::Client& c, zmq::context_t& context, const std::string& pubsub_url)
-	: client(c), url(pubsub_url), socket(context, ZMQ_SUB), subs_by_topic(), subs_by_token()
+    Hub::Hub(jsonrpc::Client& c, zmq::context_t& context, const std::string& pubsub_url, const std::string& gateway_name)
+	: client(c), url(pubsub_url), socket(context, ZMQ_SUB), subs_by_topic(), subs_by_token(), gateway(gateway_name)
     {
 
 	Json::Value v;
-	v.append(GATEWAY);
+	v.append(this->gateway);
 	v.append("zmq");
 	v.append(extract_port(this->url));
 	this->client.CallMethod("HubSrv.new_gateway", v);
@@ -81,7 +81,7 @@ namespace indyva {
 	this->subs_by_token[token] = subscription;
 
 	Json::Value v;
-	v.append(GATEWAY);
+	v.append(this->gateway);
 	v.append(topic);
 
 	if (new_topic && only_once)
@@ -118,7 +118,7 @@ namespace indyva {
 
 	if (subscriptions.empty()) {
 	    Json::Value v;
-	    v.append(GATEWAY);
+	    v.append(this->gateway);
 	    v.append(subscription.topic);
 	    this->client.CallMethod("HubSrv.unsubscribe", v);
 
@@ -151,7 +151,7 @@ namespace indyva {
 	this->subs_by_token.clear();
 
 	Json::Value v;
-	v.append(GATEWAY);
+	v.append(this->gateway);
 	this->client.CallMethod("HubSrv.clear", v);
     }
 
