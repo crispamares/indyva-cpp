@@ -60,12 +60,20 @@ int main()
     std::cout << std::endl << "* Note that the publised message has not been received" << std::endl;
 
     // TIP: hub.received_forever should be more convenient in your use case
-    for (int i=0; i<100; ++i)
+    for (int i=0; i<10; ++i)
 	hub.receive();
 
     hub.clear();
 
-    hub.receive(); // This must be blocking. There are no subscriptions at this point. 
+    /*
+      This could be blocking because there are no subscriptions at
+      this point (after the hub.clear)
+
+      This hub.receive call is not blocking because I use a "false"
+      argument
+    */
+    hub.receive(false); 
+    std::cout << std::endl << "* Done" << std::endl;
     return 0;
 
 }

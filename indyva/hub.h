@@ -35,7 +35,7 @@ namespace indyva {
 	void close(const std::string &topic);
 	void clear();
 	
-        void receive();
+        void receive(const bool blocking=true);
         void receive_forever();
 
         private:

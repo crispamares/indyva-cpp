@@ -153,14 +153,21 @@ namespace indyva {
 	this->rpc->call("HubSrv.clear", v);
     }
 
-    void Hub::receive() {
+    void Hub::receive(const bool blocking) {
 	zmq::message_t event;
+	int recv_result = 0;
+	
+	int flag = (blocking) ? 0 : (ZMQ_NOBLOCK);
 
-	this->socket.recv(&event);
+	recv_result = this->socket.recv(&event, flag);
+	std::string msg_json = std::string(static_cast<char*>(event.data()), event.size());
+	if (recv_result == 0) { 
+	    return;
+	}
 	std::string topic = std::string(static_cast<char*>(event.data()), event.size());
 
 	this->socket.recv(&event);
-	std::string msg_json = std::string(static_cast<char*>(event.data()), event.size());
+
 
         Json::Reader reader;
         Json::Value value;
